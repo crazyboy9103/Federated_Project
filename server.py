@@ -55,16 +55,30 @@ class FLServer:
         if name == "fmnist":
             return tf.keras.datasets.fashion_mnist.load_data()
 
-    def split_data(self, ratio, num_server_data, num_clients):
-        # fedrgd split
-        # https://arxiv.org/pdf/2008.11364.pdf @ appendix A.2
+    def split_data(self, num_server_data, num_clients, experiment, num_samples):
+        num_labels = max(self.y_test) + 1
+        idxs_by_class = {label:set() for label in range(num_labels)}
+
+        for idx, label in enumerate(self.y_train):
+            idxs_by_class[label].add(idx)
         
+        # Uniform split server data
+        server_idxs = {}
+        for label in range(max_label):
+            server_idxs[label] = random.sample(idxs_by_class[label], num_server_data//num_labels)
 
-        
+        # Exclude server idxs     
+        for label, idxs in idxs_by_class.items():
+            idxs_by_class[label] = idxs - set(server_idxs[label])
 
-
+        clients_idxs = {client:[] for client in range(num_clients)}
         if experiment == self.EXP_IID:
-            
-        
+            for client in range(num_clients):
+                for label in range(num_labels):
+                    samples_per_label = num_samples // num_labels
+                    random_idxs = np.random.choice(idxs_by_class[label], samples_per_label, replace=False)
+                    clients_idxs[client].extend(list(random_idxs))
+                
         
         if experiment == self.EXP_NONIID:
+            
